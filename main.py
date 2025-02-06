@@ -8,10 +8,16 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 import requests
+import my_secrets
+ 
+
+
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
+API_KEY = my_secrets.API_KEY
+app.config['SECRET_KEY'] = my_secrets.SECRET_KEY
+
 Bootstrap5(app)
 
 # CREATE DB
@@ -32,7 +38,7 @@ class Movie(db.Model):
     title = Column(String(250), nullable=False)
     year = Column(String(250), nullable=False)
     description = Column(String(250), nullable=False)
-    review = Column(String(250), nullable=False)
+    review = Column(String(250), nullable=True)
     img_url = Column(String(250), nullable=False)
 
     __table_args__ = (
@@ -43,11 +49,11 @@ class Movie(db.Model):
 
 class NewMovieForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired()])
-    year = StringField("Year", validators=[DataRequired()])
-    description = StringField('Description',validators=[DataRequired()])
-    review = StringField("Review", validators=[DataRequired()])
-    img_url= StringField("Cover", validators=[DataRequired()])
-    submit = SubmitField('Update')
+    # year = StringField("Year", validators=[DataRequired()])
+    # description = StringField('Description',validators=[DataRequired()])
+    # review = StringField("Review", validators=[DataRequired()])
+    # img_url= StringField("Cover", validators=[DataRequired()])
+    submit = SubmitField('Add')
 
 
 class EditMovieForm(FlaskForm):
@@ -58,8 +64,8 @@ class EditMovieForm(FlaskForm):
 
 #create tables 
 
-# with app.app_context():
-#     db.create_all()
+with app.app_context():
+    db.create_all()
 
 #add new entry 
 
@@ -81,16 +87,37 @@ def home():
 @app.route("/add", methods=['GET', 'POST'])
 def add_movie():
     form = NewMovieForm()
-
-
     if form.validate_on_submit():
-        new_movie = Movie(title=form.title.data, year=form.year.data, description=form.description.data, review=form.review.data, img_url=form.img_url.data)
-        db.session.add(new_movie)
-        db.session.commit()
+        MOVIE_TITLE = form.title.data
 
-        return redirect(url_for("home"))
-    
+        url = f"https://api.themoviedb.org/3/search/movie?api_key={API_KEY}&query={MOVIE_TITLE}"
+
+        response = requests.get(url)
+        if response.status_code != 200:
+            return "Error fetching movie data", 500 
+
+        data = response.json() 
+
+        if data["results"]:
+            movie_data = data['results'][0]
+            new_movie = Movie(
+                title=movie_data["title"], 
+                year=movie_data.get("release_date"),
+                description=movie_data.get("overview", "No data available"), 
+                review=None,  # ✅ This prevents the NOT NULL error
+                img_url=f"https://image.tmdb.org/t/p/w500{movie_data['poster_path']}" if movie_data.get("poster_path") else None
+            )
+
+            db.session.add(new_movie)
+            db.session.commit()
+            return redirect(url_for('home'))
+        else:
+            return "Movie not found in TMDB", 404
+        
     return render_template("add.html", form=form)
+
+
+
 
 
 
