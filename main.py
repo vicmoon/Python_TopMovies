@@ -39,24 +39,84 @@ class Movie(db.Model):
         UniqueConstraint('title', name='uq_movie_title'),
     )
 
+    
+
+class NewMovieForm(FlaskForm):
+    title = StringField("Title", validators=[DataRequired()])
+    year = StringField("Year", validators=[DataRequired()])
+    description = StringField('Description',validators=[DataRequired()])
+    review = StringField("Review", validators=[DataRequired()])
+    img_url= StringField("Cover", validators=[DataRequired()])
+    submit = SubmitField('Update')
+
+
+class EditMovieForm(FlaskForm):
+    title = StringField("Title", validators=[DataRequired()])
+    description = StringField('Description',validators=[DataRequired()])
+    submit = SubmitField('Update')
+
+
 #create tables 
 
-with app.app_context():
-    db.create_all()
+# with app.app_context():
+#     db.create_all()
 
 #add new entry 
 
-with app.app_context():
-    new_movie = Movie(title="New Movie", year="2025", description="The Description", review="The Review", img_url="https://image.tmdb.org0.jpg")
-    db.session.add(new_movie)
-    db.session.commit()
+# with app.app_context():
+#     new_movie = Movie(title="Reservoir Dog", year="1992", description="This and that", review="I would like to see the movies", img_url="https://image.tmdb.org/t/p/w500/")
+#     db.session.add(new_movie)
+#     db.session.commit()
 
+
+#get all entries 
 
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    movies =Movie.query.all()
+    return render_template("index.html", movies=movies)
 
 
-if __name__ == '__main__':
+@app.route("/add", methods=['GET', 'POST'])
+def add_movie():
+    form = NewMovieForm()
+
+
+    if form.validate_on_submit():
+        new_movie = Movie(title=form.title.data, year=form.year.data, description=form.description.data, review=form.review.data, img_url=form.img_url.data)
+        db.session.add(new_movie)
+        db.session.commit()
+
+        return redirect(url_for("home"))
+    
+    return render_template("add.html", form=form)
+
+
+
+@app.route("/edit/<int:movie_id>", methods = ['GET', 'POST'])
+def update_movie(movie_id):
+    movie = Movie.query.get_or_404(movie_id)
+    form = EditMovieForm(obj=movie)
+
+    if form.validate_on_submit():
+        movie.title = form.title.data
+        movie.description = form.description.data
+        db.session.commit()
+        return redirect(url_for("home"))
+    return render_template("edit.html", form=form, movie_id=movie_id)
+
+@app.route("/delete/<int:movie_id>", methods =['GET', 'POST'])
+def delete_movie(movie_id):
+    movie = Movie.query.get_or_404(movie_id)
+    db.session.delete(movie)
+    db.session.commit()
+
+    return redirect(url_for("home"))
+
+
+
+
+
+if __name__ == "__main__":
     app.run(debug=True)
