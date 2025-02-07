@@ -9,14 +9,15 @@ from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 import requests
 import my_secrets
+import os 
  
 
 
 
 
 app = Flask(__name__)
-API_KEY = my_secrets.API_KEY
-app.config['SECRET_KEY'] = my_secrets.SECRET_KEY
+API_KEY = os.getenv("API_KEY")
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 
 Bootstrap5(app)
 
