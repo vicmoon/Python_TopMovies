@@ -106,7 +106,7 @@ def add_movie():
 
         if data["results"]:
             movie_data = data['results']
-            print("Movies found:", movie_data)  # Debugging
+            # print("Movies found:", movie_data)  # Debugging
 
             return render_template("select.html", movies=movie_data)
 
