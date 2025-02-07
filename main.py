@@ -102,7 +102,7 @@ def add_movie():
             return "Error fetching movie data", 500 
 
         data = response.json()
-        print("Data received:", data)  # Debugging
+        # print("Data received:", data)  # Debugging
 
         if data["results"]:
             movie_data = data['results']
@@ -122,11 +122,14 @@ def add_movie_id(movie_id):
 
     if response.status_code != 200:
          return "Error fetching the movie", 500
+    
+    year=movie_data.get("release_date", "Unknown"),
+    year = year[:4] if year and len(year) >= 4 else "Unknown",
      
     movie_data = response.json()
     new_movie = Movie(
                 title=movie_data["title"], 
-                year=movie_data.get("release_date", "Unknown"),
+                year= year,
                 description=movie_data.get("overview", "No data available"), 
                 review=None,  # ✅ This prevents the NOT NULL error
                 img_url=f"https://image.tmdb.org/t/p/w500{movie_data['poster_path']}" if movie_data.get("poster_path") else None

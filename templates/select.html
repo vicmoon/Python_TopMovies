@@ -2,7 +2,7 @@
   <h1 class="heading">Select Movie</h1>
   {% for movie in movies %}
   <p>
-    <span><a href="{{url_for("add_movie_id", movie_id=movie.id)}}">{{ movie.title }} / {{movie.release_date}}</a>
+    <span><a href="{{url_for('add_movie_id', movie_id=movie.id)}}">{{ movie.title }} / {{ movie.release_date[:4] if movie.release_date else "Unknown" }}</a>
   </p>
   {% endfor %}
 </div>
