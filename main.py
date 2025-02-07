@@ -123,10 +123,11 @@ def add_movie_id(movie_id):
     if response.status_code != 200:
          return "Error fetching the movie", 500
     
-    year=movie_data.get("release_date", "Unknown"),
-    year = year[:4] if year and len(year) >= 4 else "Unknown",
-     
+    
+
     movie_data = response.json()
+    year=movie_data.get("release_date", "Unknown")
+    year = year[:4] if year and len(year) >= 4 else "Unknown"
     new_movie = Movie(
                 title=movie_data["title"], 
                 year= year,
