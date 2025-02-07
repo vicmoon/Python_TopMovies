@@ -59,6 +59,7 @@ class NewMovieForm(FlaskForm):
 class EditMovieForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired()])
     description = StringField('Description',validators=[DataRequired()])
+    review= StringField('Review',validators=[DataRequired()])
     submit = SubmitField('Update')
 
 
@@ -84,40 +85,56 @@ def home():
     return render_template("index.html", movies=movies)
 
 
-@app.route("/add", methods=['GET', 'POST'])
+@app.route("/add", methods=['GET', 'POST']) 
 def add_movie():
     form = NewMovieForm()
     if form.validate_on_submit():
-        MOVIE_TITLE = form.title.data
+        print("Form submitted!")  # Debugging
 
-        url = f"https://api.themoviedb.org/3/search/movie?api_key={API_KEY}&query={MOVIE_TITLE}"
+        MOVIE_TITLE = form.title.data.strip()
+        print("Movie title:", MOVIE_TITLE)  # Debugging
 
+        url = f"https://api.themoviedb.org/3/search/movie?api_key={API_KEY}&query={MOVIE_TITLE}&page=1"
         response = requests.get(url)
+
         if response.status_code != 200:
+            print("Error fetching movie data:", response.status_code)
             return "Error fetching movie data", 500 
 
-        data = response.json() 
+        data = response.json()
+        print("Data received:", data)  # Debugging
 
         if data["results"]:
-            movie_data = data['results'][0]
-            new_movie = Movie(
+            movie_data = data['results']
+            print("Movies found:", movie_data)  # Debugging
+
+            return render_template("select.html", movies=movie_data)
+
+    return render_template("add.html", form=form)
+
+
+@app.route("/add/<int:movie_id>")
+def add_movie_id(movie_id):
+     
+    url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={API_KEY}"
+
+    response = requests.get(url)
+
+    if response.status_code != 200:
+         return "Error fetching the movie", 500
+     
+    movie_data = response.json()
+    new_movie = Movie(
                 title=movie_data["title"], 
-                year=movie_data.get("release_date"),
+                year=movie_data.get("release_date", "Unknown"),
                 description=movie_data.get("overview", "No data available"), 
                 review=None,  # ✅ This prevents the NOT NULL error
                 img_url=f"https://image.tmdb.org/t/p/w500{movie_data['poster_path']}" if movie_data.get("poster_path") else None
             )
+    db.session.add(new_movie)
+    db.session.commit()
 
-            db.session.add(new_movie)
-            db.session.commit()
-            return redirect(url_for('home'))
-        else:
-            return "Movie not found in TMDB", 404
-        
-    return render_template("add.html", form=form)
-
-
-
+    return redirect(url_for('home'))
 
 
 
@@ -129,6 +146,7 @@ def update_movie(movie_id):
     if form.validate_on_submit():
         movie.title = form.title.data
         movie.description = form.description.data
+        movie.review = form.review.data 
         db.session.commit()
         return redirect(url_for("home"))
     return render_template("edit.html", form=form, movie_id=movie_id)
