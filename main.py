@@ -94,7 +94,7 @@ def add_movie():
         MOVIE_TITLE = form.title.data.strip()
         print("Movie title:", MOVIE_TITLE)  # Debugging
 
-        url = f"https://api.themoviedb.org/3/search/movie?api_key={API_KEY}&query={MOVIE_TITLE}&page=1"
+        url = f"https://api.themoviedb.org/3/search/movie?api_key={API_KEY}&query={MOVIE_TITLE}"
         response = requests.get(url)
 
         if response.status_code != 200:
